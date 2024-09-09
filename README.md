@@ -131,3 +131,9 @@ This project demonstrates how to build a backend solution for video upload, subt
 
 ## Points to remember
 1. Not able to extract subtitle from some sample video except the one's I downloaded from their github repo
+
+![Image ccextract process](media/screenshots/1.png)
+![server running](media/screenshots/2.png)
+![Search result](media/screenshots/3.png)
+![listing videos](media/screenshots/4.png)
+![upload vide](media/screenshots/5.png)
