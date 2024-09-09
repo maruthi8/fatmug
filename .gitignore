@@ -2,3 +2,5 @@
 .env
 staticfiles
 *.ipynb
+
+*/__pycache__/
