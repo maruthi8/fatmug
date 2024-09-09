@@ -1,0 +1,39 @@
+# Use Alpine as base image
+FROM alpine:latest AS builder
+
+# Install dependencies
+RUN apk add --no-cache --update \
+    git curl gcc cmake glew glfw \
+    tesseract-ocr-dev leptonica-dev clang-dev llvm-dev make pkgconfig \
+    zlib-dev libpng-dev libjpeg-turbo-dev openssl-dev freetype-dev libxml2-dev \
+    bash cargo
+
+# Build and install GPAC
+WORKDIR /root
+RUN git clone https://github.com/gpac/gpac && \
+    cd gpac && \
+    ./configure && make && make install-lib && \
+    cd .. && rm -rf gpac
+
+# Clone and build CCExtractor
+RUN git clone https://github.com/CCExtractor/ccextractor.git && \
+    cd ccextractor/linux && \
+    export LIB_CLANG_PATH=$(find / -name 'libclang*.so*' 2>/dev/null | grep -v 'No such file' | head -n 1 | xargs dirname) && \
+    ./pre-build.sh && ./build && \
+    cp ccextractor /usr/local/bin/ && \
+    cd ../.. && rm -rf ccextractor
+
+# Final stage
+FROM alpine:latest
+
+# Copy necessary libraries and CCExtractor binary
+COPY --from=builder /usr/local/bin/ccextractor /usr/local/bin/
+COPY --from=builder /usr/lib/*.so* /usr/lib/
+COPY --from=builder /usr/local/lib/*.so* /usr/local/lib/
+COPY --from=builder /lib/*.so* /lib/
+
+# Set the entrypoint
+ENTRYPOINT ["ccextractor"]
+
+# Set the default command
+CMD ["--help"]

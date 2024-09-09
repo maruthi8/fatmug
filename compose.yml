@@ -1,0 +1,51 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sh -c '/build_ccextractor_image.sh && python3 manage.py collectstatic --no-input && python3 manage.py migrate && python3 manage.py runserver 0.0.0.0:8000'
+    volumes:
+      - .:/app
+      - ${HOST_MEDIA_PATH}:/app/media
+      - /var/run/docker.sock:/var/run/docker.sock
+    privileged: true
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - HOST_MEDIA_PATH=${HOST_MEDIA_PATH}
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A fatmug worker -l info
+    volumes:
+      - .:/app
+      - ${HOST_MEDIA_PATH}:/app/media
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - web
+      - db
+      - redis
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - HOST_MEDIA_PATH=${HOST_MEDIA_PATH}
+
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+
+  redis:
+    image: redis:6
+
+volumes:
+  postgres_data:
